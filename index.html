@@ -279,6 +279,19 @@
         .opt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .opt-grid .comic-btn { font-size: 15px; padding: 6px 4px; }
         #optReset.armed { background: #dc2626; }
+        #shareScreen { background: rgba(2, 6, 23, 0.8); z-index: 49; }
+        .share-card { width: min(620px, 94%); gap: 8px; transform: rotate(-0.6deg); }
+        .share-card .opt-title { font-size: 32px; }
+        #shareImg { width: 100%; border: 3px solid #000; border-radius: 10px; box-shadow: 4px 4px 0 #000; background: #0f172a; aspect-ratio: 16 / 9; object-fit: cover; }
+        .share-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
+        .share-grid .comic-btn { font-size: 15px; padding: 7px 4px; color: #fff; }
+        .sh-native { grid-column: 1 / -1; background: #ef4444; color: #fde047 !important; font-size: 20px !important; }
+        .sh-line { background: #06c755; } .sh-fb { background: #1877f2; } .sh-x { background: #111827; } .sh-threads { background: #000; }
+        .sh-dl { background: #7c3aed; } .sh-copy { background: #0e7490; }
+        .share-row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .share-row2 .comic-btn { font-size: 15px; padding: 7px 4px; }
+        .share-note { font-size: 12px; font-weight: 700; text-align: center; color: #78350f; min-height: 16px; }
+        .btn-share { background: #ec4899; color: #fff; }
         .exit-msg { font-size: 18px; font-weight: 900; text-align: center; line-height: 1.6; }
 
         @keyframes introFlash { 0% { opacity: 0.9; } 15% { opacity: 0.15; } 25% { opacity: 0.75; } 100% { opacity: 0; } }
@@ -642,6 +655,13 @@
             #howScreen .guide { margin-top: auto; }
             #howClose { margin-bottom: auto; }
             .opt-card { padding: 8px 14px; gap: 6px; }
+            .share-card { flex-direction: row; flex-wrap: wrap; width: min(760px, 96%); align-items: center; }
+            .share-card .opt-title { font-size: 20px; width: 100%; }
+            #shareImg { width: 46%; }
+            .share-side { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+            .share-grid .comic-btn, .share-row2 .comic-btn { font-size: 12px; padding: 5px 2px; }
+            .sh-native { font-size: 15px !important; }
+            .share-note { font-size: 10px; }
             .opt-title { font-size: 26px; }
             .opt-row { font-size: 14px; padding: 4px 10px; }
             .opt-grid .comic-btn { font-size: 12px; }
@@ -768,6 +788,28 @@
         </div>
 
         <!-- Options -->
+        <div id="shareScreen" class="overlay hidden">
+            <div class="opt-card share-card comic-border">
+                <h2 class="comic-text opt-title">SHARE 分享戰績！</h2>
+                <img id="shareImg" alt="戰績圖">
+                <div class="share-side">
+                    <div class="share-grid">
+                        <button id="shNative" class="comic-btn comic-text sh-native">📱 分享到… </button>
+                        <button id="shLine" class="comic-btn sh-line">LINE</button>
+                        <button id="shFb" class="comic-btn sh-fb">Facebook</button>
+                        <button id="shX" class="comic-btn sh-x">X</button>
+                        <button id="shThreads" class="comic-btn sh-threads">Threads</button>
+                    </div>
+                    <div class="share-row2">
+                        <button id="shDl" class="comic-btn sh-dl">⬇ 下載圖片</button>
+                        <button id="shCopy" class="comic-btn sh-copy">📋 複製文字</button>
+                        <button id="shClose" class="comic-btn btn-dark">關閉</button>
+                    </div>
+                    <div id="shareNote" class="share-note"></div>
+                </div>
+            </div>
+        </div>
+
         <div id="optScreen" class="overlay hidden">
             <div class="opt-card comic-border">
                 <h2 class="comic-text opt-title">OPTIONS 選項</h2>
@@ -932,6 +974,7 @@
             </div>
             <div class="btn-row" style="margin-top:0">
                 <button id="restartBtn" class="comic-btn comic-text btn-yellow">再飆一次 RETRY!</button>
+                <button id="goShareBtn" class="comic-btn btn-dark btn-share">📤 分享</button>
                 <button id="goTitleBtn" class="comic-btn btn-dark">🏠 回標題</button>
             </div>
         </div>
@@ -956,6 +999,7 @@
             </div>
             <div class="btn-row" style="margin-top:0">
                 <button id="nextBtn" class="comic-btn comic-text btn-yellow">下一站 ▶</button>
+                <button id="clearShareBtn" class="comic-btn btn-dark btn-share">📤 分享戰績</button>
                 <button id="clearRetryBtn" class="comic-btn btn-dark">↺ 重玩本關</button>
                 <button id="clearTitleBtn" class="comic-btn btn-dark">🏠 回標題</button>
             </div>
@@ -2522,6 +2566,7 @@
             const k = e.code;
             if (k === 'Space' || k === 'ArrowUp' || k === 'ArrowDown') e.preventDefault();
             if (e.repeat) return;
+            if (!$('shareScreen').classList.contains('hidden')) { if (k === 'Escape') closeShare(); return; }
             if (gameState === 'SPLASH' && $('tutScreen').classList.contains('hidden')) {
                 if (!$('optScreen').classList.contains('hidden')) { if (k === 'Escape') closeOptions(); return; }
                 if (!$('exitScreen').classList.contains('hidden')) { if (k === 'Escape') $('exitScreen').classList.add('hidden'); return; }
@@ -2626,6 +2671,16 @@
         onButton('clearTitleBtn', () => showTitle());
         onButton('endlessBtn', () => startEndless());
         onButton('goBtn', () => startStage(selIdx));
+        onButton('goShareBtn', openShare);
+        onButton('clearShareBtn', openShare);
+        onButton('shNative', shareNative);
+        onButton('shLine', () => openShareUrl('https://line.me/R/share?text=' + encodeURIComponent(shareText() + (GAME_URL ? '\n' + GAME_URL : ''))));
+        onButton('shFb', () => openShareUrl('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(GAME_URL) + '&hashtag=' + encodeURIComponent('#颱風天戰車狂飆')));
+        onButton('shX', () => openShareUrl('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText()) + (GAME_URL ? '&url=' + encodeURIComponent(GAME_URL) : '')));
+        onButton('shThreads', () => openShareUrl('https://www.threads.net/intent/post?text=' + encodeURIComponent(shareText() + (GAME_URL ? '\n' + GAME_URL : ''))));
+        onButton('shDl', downloadShare);
+        onButton('shCopy', copyShare);
+        onButton('shClose', closeShare);
         // Swallow the tap/click that opened the stage select so it can't hit a card or button underneath
         $('startScreen').addEventListener('click', (e) => { if (performance.now() < selLockUntil) { e.stopPropagation(); e.preventDefault(); } }, true);
         onButton('stageOptBtn', () => openOptions());
@@ -5554,7 +5609,7 @@
         function hideOverlays() {
             leaveSplash();
             ['startScreen', 'howScreen', 'tutScreen', 'gameOverScreen', 'pauseScreen', 'clearScreen', 'gustWarn', 'stageBanner',
-             'splashScreen', 'optScreen', 'exitScreen'].forEach(id => $(id).classList.add('hidden'));
+             'splashScreen', 'optScreen', 'exitScreen', 'shareScreen'].forEach(id => $(id).classList.add('hidden'));
         }
 
         function startStage(i) {
@@ -5637,9 +5692,174 @@
             flipInput = 0;
         }
 
+        // =====================================================================
+        //  Social sharing: a score card image + text, via the native share sheet or share links
+        // =====================================================================
+        let lastRun = null, shareShot = null, shareBlob = null;
+        const GAME_URL = /^https?:/.test(location.protocol) ? location.href.split('#')[0] : '';
+        const HASHTAGS = '#颱風天戰車狂飆 #TyphoonTankRush';
+
+        function snapRun(info) {
+            shareShot = document.createElement('canvas');
+            shareShot.width = canvas.width; shareShot.height = canvas.height;
+            try { shareShot.getContext('2d').drawImage(canvas, 0, 0); } catch (e) {}
+            lastRun = Object.assign({
+                mode, stageIdx, city: curCity(), score, dist: Math.floor(distance / 10), speed: Math.floor(maxSpeedKm),
+                combo: combo.max, tea: Math.round(tea.level * 100), coins: teaCoins
+            }, info);
+            shareBlob = null;
+        }
+
+        function shareText() {
+            const r = lastRun; if (!r) return '';
+            let t;
+            if (r.type === 'clear') {
+                t = `我在《颱風天戰車狂飆》開戰車衝過颱風天的${r.city.name}！STAGE ${r.stageIdx + 1} 過關 ${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)}\n` +
+                    `🏆 ${r.score} 分｜極速 ${r.speed} km/h｜車長的紅茶還剩 ${r.tea}% ☕` + (r.souv ? `｜紀念品 ${r.souv}/3 🎁` : '');
+            } else if (r.mode === 'endless') {
+                t = `我在《颱風天戰車狂飆》無盡模式飆了 ${(r.dist / 1000).toFixed(2)} km，一路衝到${r.city.name}！\n🏆 ${r.score} 分｜極速 ${r.speed} km/h｜最高 ${r.combo} 連擊`;
+            } else {
+                t = `我在《颱風天戰車狂飆》${r.city.name}關翻車了…飆了 ${r.dist} m（${r.pct}%）\n🏆 ${r.score} 分｜極速 ${r.speed} km/h｜換你來挑戰！`;
+            }
+            return `${t}\n${HASHTAGS}`;
+        }
+
+        function makeShareCanvas() {
+            const r = lastRun;
+            const Wc = 1200, Hc = 675;
+            const c = document.createElement('canvas'); c.width = Wc; c.height = Hc;
+            const g = c.getContext('2d');
+            g.fillStyle = '#0f172a'; g.fillRect(0, 0, Wc, Hc);
+            if (shareShot && shareShot.width) {
+                const k = Math.max(Wc / shareShot.width, Hc / shareShot.height);
+                const w = shareShot.width * k, h = shareShot.height * k;
+                g.drawImage(shareShot, (Wc - w) / 2, (Hc - h) / 2, w, h);
+            }
+            const grad = g.createLinearGradient(0, 0, Wc, 0);
+            grad.addColorStop(0, 'rgba(2,6,23,0.92)'); grad.addColorStop(0.55, 'rgba(2,6,23,0.6)'); grad.addColorStop(1, 'rgba(2,6,23,0.05)');
+            g.fillStyle = grad; g.fillRect(0, 0, Wc, Hc);
+            // halftone dots
+            g.fillStyle = 'rgba(255,255,255,0.05)';
+            for (let y = 0; y < Hc; y += 12) for (let x = (y / 12) % 2 * 6; x < Wc * 0.6; x += 12) { g.beginPath(); g.arc(x, y, 1.6, 0, 7); g.fill(); }
+            const txt = (str, x, y, size, fill, stroke = '#000', lw = 8, font = FONT_ZH, weight = 900) => {
+                g.font = `${weight} ${size}px ${font}`;
+                g.lineJoin = 'round'; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(str, x, y);
+                g.fillStyle = fill; g.fillText(str, x, y);
+            };
+            g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+            g.save(); g.translate(56, 92); g.rotate(-0.04);
+            txt('颱風天戰車狂飆', 0, 0, 64, '#facc15', '#000', 10);
+            txt('TYPHOON TANK RUSH', 4, 40, 24, '#22d3ee', '#000', 6);
+            g.restore();
+            // result banner
+            const clear = r.type === 'clear';
+            const head = clear ? `STAGE ${r.stageIdx + 1}・${r.city.name} CLEAR!` : r.mode === 'endless' ? `ENDLESS・${(r.dist / 1000).toFixed(2)} km` : `${r.city.name}・CRASHED!`;
+            g.save(); g.translate(56, 205); g.rotate(-0.03);
+            g.font = `900 40px ${FONT_ZH}`;
+            const bw = g.measureText(head).width + 40;
+            g.fillStyle = '#000'; g.fillRect(6, -44, bw, 60);
+            g.fillStyle = clear ? '#16a34a' : '#dc2626'; g.fillRect(0, -50, bw, 60);
+            g.lineWidth = 4; g.strokeStyle = '#000'; g.strokeRect(0, -50, bw, 60);
+            g.fillStyle = '#fff'; g.fillText(head, 20, -4);
+            g.restore();
+            // score
+            txt('SCORE', 60, 290, 26, '#cbd5e1', '#000', 6);
+            txt(String(r.score), 56, 380, 104, '#fde047', '#000', 12);
+            // stars
+            if (clear) {
+                for (let k = 0; k < 3; k++) {
+                    const on = k < r.stars, x = 90 + k * 82, y = 450;
+                    g.save(); g.translate(x, y);
+                    g.beginPath();
+                    for (let p = 0; p < 10; p++) { const rr = p % 2 ? 15 : 36, a = -Math.PI / 2 + p * Math.PI / 5; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+                    g.closePath(); g.fillStyle = on ? '#facc15' : '#334155'; g.fill(); g.lineWidth = 5; g.strokeStyle = '#000'; g.stroke();
+                    g.restore();
+                }
+            }
+            // stat chips
+            const chips = clear
+                ? [`極速 ${r.speed} km/h`, `紅茶 ${r.tea}%`, `連擊 ${r.combo}`, `紀念品 ${r.souv}/3`]
+                : [`極速 ${r.speed} km/h`, `距離 ${r.dist} m`, `連擊 ${r.combo}`, `茶幣 ${r.coins}`];
+            let cx = 56, y = clear ? 515 : 460;
+            g.font = `900 24px ${FONT_ZH}`;
+            chips.forEach((t, k) => {
+                const w = g.measureText(t).width + 30;
+                if (cx + w > Wc * 0.66) { cx = 56; y += 54; }
+                g.fillStyle = '#000'; g.fillRect(cx + 4, y + 4, w, 42);
+                g.fillStyle = ['#22d3ee', '#fdba74', '#f0abfc', '#a3e635'][k]; g.fillRect(cx, y, w, 42);
+                g.lineWidth = 3; g.strokeStyle = '#000'; g.strokeRect(cx, y, w, 42);
+                g.fillStyle = '#000'; g.fillText(t, cx + 15, y + 30);
+                cx += w + 12;
+            });
+            txt(HASHTAGS, 58, Hc - 34, 24, '#fff', '#000', 6);
+            // tank sprite badge
+            if (tankImg.complete && tankImg.naturalWidth) {
+                g.save(); g.translate(Wc - 250, Hc - 150); g.rotate(-0.08);
+                g.drawImage(tankImg, -150, -100, 300, 300 * tankImg.naturalHeight / tankImg.naturalWidth);
+                g.restore();
+            }
+            return c;
+        }
+
+        function setShareNote(t) { $('shareNote').textContent = t; }
+
+        function openShare() {
+            if (!lastRun) return;
+            initAudio(); playSound('panel');
+            const c = makeShareCanvas();
+            $('shareImg').src = c.toDataURL('image/png');
+            shareBlob = null;
+            if (c.toBlob) c.toBlob(b => { shareBlob = b; }, 'image/png');
+            $('shNative').classList.toggle('hidden', !navigator.share);
+            $('shFb').classList.toggle('hidden', !GAME_URL);
+            setShareNote(GAME_URL ? '' : '小提示：Facebook／IG 請先「下載圖片」再上傳貼文');
+            $('shareScreen').classList.remove('hidden');
+        }
+        function closeShare() { $('shareScreen').classList.add('hidden'); }
+
+        function openShareUrl(url) {
+            const w = window.open(url, '_blank', 'noopener');
+            if (!w) location.href = url;
+        }
+
+        async function shareNative() {
+            const text = shareText();
+            try {
+                if (shareBlob && window.File && navigator.canShare) {
+                    const file = new File([shareBlob], 'typhoon-tank-rush.png', { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], text, title: '颱風天戰車狂飆' });
+                        return;
+                    }
+                }
+                await navigator.share(GAME_URL ? { text, url: GAME_URL, title: '颱風天戰車狂飆' } : { text, title: '颱風天戰車狂飆' });
+            } catch (e) {
+                if (e && e.name !== 'AbortError') setShareNote('這個瀏覽器不支援直接分享，改用下面的按鈕吧！');
+            }
+        }
+
+        function downloadShare() {
+            const a = document.createElement('a');
+            const done = (url) => { a.href = url; a.download = `颱風天戰車狂飆_${lastRun.score}.png`; document.body.appendChild(a); a.click(); a.remove(); };
+            if (shareBlob) { const u = URL.createObjectURL(shareBlob); done(u); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+            else done($('shareImg').src);
+            setShareNote('圖片已下載 ✔ 可以上傳到 IG／FB／Discord');
+        }
+
+        async function copyShare() {
+            const text = shareText() + (GAME_URL ? '\n' + GAME_URL : '');
+            try { await navigator.clipboard.writeText(text); }
+            catch (e) {
+                const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (err) {} ta.remove();
+            }
+            setShareNote('文字已複製 ✔ 貼到任何地方都可以');
+        }
+
         function triggerGameOver(reason) {
             gameState = 'GAMEOVER';
             endRunUI();
+            snapRun({ type: 'over', pct: mode === 'stage' ? Math.floor(stageProgress * 100) : 0 });
             let isRecord, best;
             if (mode === 'stage') {
                 isRecord = score > (stageBest[stageIdx] || 0);
@@ -5714,6 +5934,7 @@
                 setTimeout(() => { el.classList.add('on'); if (!(before & bit)) el.classList.add('new'); playSound('star'); }, delay);
                 delay += 380;
             });
+            snapRun({ type: 'clear', score, tea: teaPct, stars: starCount(got), souv: souvOwned[stageIdx].filter(Boolean).length });
             $('clearScreen').classList.remove('hidden');
             addComicText('GOAL!!', tank.x - 40, tank.y - 110, '#4ade80', 64);
             playSound('fanfare');
